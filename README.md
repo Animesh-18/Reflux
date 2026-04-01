@@ -1,29 +1,34 @@
-# 🚀 Event Bus Framework – Full Workflow Documentation
+# Reflux
 
-## 📌 Overview
-
-The Event Bus Framework is a **decoupled communication system** that enables different components of an application to communicate via events without direct dependencies.
-
-Instead of components calling each other directly, they:
-
-* **Publish events** → when something happens
-* **Subscribe to events** → to react to those changes
-
-This improves:
-
-* Scalability
-* Maintainability
-* Modularity
+> A lightweight, concurrent Event Bus framework for decoupled system design.
 
 ---
 
-## 🧠 Core Concepts
+## Overview
 
-### 1. Event
+Reflux is an event-driven communication framework designed to enable **loosely coupled interaction** between components. Instead of direct method calls, components communicate through events, improving modularity and scalability.
 
-An **Event** represents a change or action in the system.
+The system is built with:
+- **Concurrency in mind**
+- **Multithreaded execution**
+- **Deadlock-free design principles**
 
-Example:
+---
+
+## Why Reflux?
+
+Modern systems require components to evolve independently without tight coupling. Reflux addresses this by introducing an event-driven architecture where:
+
+- Producers emit events  
+- Consumers react asynchronously  
+- The system remains extensible and maintainable  
+
+---
+
+## Core Concepts
+
+### Event
+A simple data object representing a system occurrence.
 
 ```java
 class UserCreatedEvent {
@@ -33,11 +38,8 @@ class UserCreatedEvent {
 
 ---
 
-### 2. Publisher (Producer)
-
-A **Publisher** emits events into the Event Bus.
-
-Example:
+### Publisher
+Emits events into the system.
 
 ```java
 eventBus.publish(new UserCreatedEvent("Animesh"));
@@ -45,11 +47,8 @@ eventBus.publish(new UserCreatedEvent("Animesh"));
 
 ---
 
-### 3. Subscriber (Consumer)
-
-A **Subscriber** listens for specific events and reacts.
-
-Example:
+### Subscriber
+Listens and reacts to specific events.
 
 ```java
 @Subscribe
@@ -60,293 +59,131 @@ public void onUserCreated(UserCreatedEvent event) {
 
 ---
 
-### 4. Event Bus (Core Engine)
-
-The **Event Bus**:
-
-* Registers subscribers
-* Maintains mapping of event types → listeners
-* Dispatches events to appropriate subscribers
+### Event Bus
+The central coordinator responsible for:
+- Registering subscribers  
+- Mapping events to handlers  
+- Dispatching events efficiently  
 
 ---
 
-## 🔁 Complete Workflow (Step-by-Step)
+## Workflow
 
-### 🟢 Step 1: System Initialization
+1. **Initialize the Event Bus**
+   ```java
+   EventBus eventBus = new EventBus();
+   ```
 
-* Create an instance of EventBus
-* Initialize internal data structures
+2. **Register Subscribers**
+   - Reflection identifies methods annotated with `@Subscribe`
+   - Event-handler mappings are stored internally
 
-```java
-EventBus eventBus = new EventBus();
-```
+3. **Publish Event**
+   ```java
+   eventBus.publish(event);
+   ```
 
-Internal structure:
-
-```
-Map<Class<?>, List<Subscriber>>
-```
-
----
-
-### 🟢 Step 2: Register Subscribers
-
-* Subscribers are registered with the EventBus
-* Reflection is used to detect methods annotated with `@Subscribe`
-
-```java
-eventBus.register(new UserService());
-```
-
-#### What happens internally:
-
-1. Scan all methods of the class
-2. Identify methods with `@Subscribe`
-3. Extract event type from method parameter
-4. Store mapping:
-
-```
-UserCreatedEvent → [UserService.onUserCreated]
-```
+4. **Dispatch**
+   - Event type is resolved  
+   - Matching subscribers are invoked  
 
 ---
 
-### 🟢 Step 3: Event Creation
+## Architecture
 
-* Event object is created when an action occurs
-
-```java
-UserCreatedEvent event = new UserCreatedEvent("Animesh");
-```
+![Event Bus Architecture](./architecture.png)
 
 ---
 
-### 🟢 Step 4: Publishing the Event
+## Event Store & Replay Mechanism
 
-* Publisher sends event to EventBus
+Reflux includes an **Event Store** that enhances reliability and debugging capabilities.
 
-```java
-eventBus.publish(event);
-```
+- All events can be optionally persisted  
+- Failed or unprocessed events are stored  
+- Events can be **replayed** to reproduce system behavior  
+- Useful for debugging, auditing, and recovery  
 
----
-
-### 🟢 Step 5: Event Routing
-
-Inside EventBus:
-
-1. Identify event type:
-
-```
-event.getClass()
-```
-
-2. Lookup subscribers:
-
-```
-List<Subscribers> = map.get(UserCreatedEvent.class)
-```
+This ensures that no critical event is permanently lost and provides better observability into the system.
 
 ---
 
-### 🟢 Step 6: Dispatching the Event
+## Concurrency Model
 
-* EventBus invokes all matching subscriber methods
+Reflux is designed to operate efficiently under concurrent workloads.
 
-```java
-subscriberMethod.invoke(instance, event);
-```
+- **Multithreaded Execution**  
+  Events can be processed in parallel using worker threads  
 
-Execution flow:
+- **Thread Safety**  
+  Internal data structures are managed to avoid race conditions  
 
-```
-Publisher → EventBus → Subscriber(s)
-```
+- **Deadlock-Free Design**  
+  No cyclic dependencies or blocking chains in dispatch logic  
 
----
-
-### 🟢 Step 7: Subscriber Execution
-
-Each subscriber processes the event independently:
-
-```java
-public void onUserCreated(UserCreatedEvent event) {
-    // business logic
-}
-```
+- **Asynchronous Processing**  
+  Supports non-blocking event handling  
 
 ---
 
-## ⚙️ Internal Architecture
+## Features
 
-![Event Bus Architecture](./Screenshot 2026-04-01 143855.png)
-
----
-
-## 🧩 Key Features
-
-### ✔ Loose Coupling
-
-* Publisher doesn’t know subscribers
-* Subscribers don’t know publishers
+- Loose coupling between components  
+- Dynamic subscription mechanism  
+- Multiple subscribers per event  
+- Strongly typed events  
+- Concurrent event handling  
+- Event persistence and replay support  
 
 ---
 
-### ✔ Dynamic Subscription
-
-* Can register/unregister at runtime
-
----
-
-### ✔ Multiple Subscribers
-
-* One event → many listeners
-
----
-
-### ✔ Type Safety
-
-* Events are strongly typed
-
----
-
-## 🔄 Advanced Workflow (Optional Enhancements)
-
-### 1. Async Event Handling
-
-Instead of direct invocation:
-
-```java
-ExecutorService.submit(() -> method.invoke(...));
-```
-
----
-
-### 2. Priority-Based Execution
-
-Subscribers can have priority levels:
-
-```
-HIGH → MEDIUM → LOW
-```
-
----
-
-### 3. Sticky Events
-
-Store last event and deliver to new subscribers
-
----
-
-### 4. Error Handling
-
-Wrap invocation:
-
-```java
-try {
-    method.invoke(...)
-} catch (Exception e) {
-    // log error
-}
-```
-
----
-
-## 🛠 Example Full Flow
-
-### Step 1: Define Event
+## Example
 
 ```java
 class OrderPlacedEvent {
     int orderId;
 }
-```
 
----
-
-### Step 2: Create Subscriber
-
-```java
 class NotificationService {
     @Subscribe
     public void sendNotification(OrderPlacedEvent event) {
         System.out.println("Order placed: " + event.orderId);
     }
 }
-```
 
----
-
-### Step 3: Initialize the Bus
-
-```java
-eventBus.register(new NotificationService());
-```
-
----
-
-### Step 4: Publish Event
-
-```java
+eventBus.init("base package name");
 eventBus.publish(new OrderPlacedEvent(101));
 ```
 
----
-
-### Step 5: Output
-
+**Output**
 ```
 Order placed: 101
 ```
 
 ---
 
-## 📊 Advantages
+## When to Use
 
-* Clean architecture
-* Easy debugging
-* Scalable system
-* Reusable components
+Use Reflux if your system:
+- Has multiple interacting components  
+- Requires scalability  
+- Benefits from asynchronous communication  
 
----
-
-## ⚠️ Limitations
-
-* Debugging event chains can be complex
-* Reflection may impact performance
-* Hard to trace execution flow
+Avoid if:
+- Direct calls are sufficient  
+- Ultra-low latency is critical  
 
 ---
 
-## 🧠 When to Use
+## Design Notes
 
-Use Event Bus when:
-
-* Many components need to communicate
-* You want loose coupling
-* System is event-driven
-
-Avoid when:
-
-* Simple direct calls are enough
-* Performance is extremely critical
+Reflux focuses on:
+- Simplicity over heavy abstraction  
+- Performance under concurrency  
+- Clean separation of concerns  
 
 ---
 
-## 🎯 Conclusion
+## Author
 
-The Event Bus acts as a **central communication backbone** that:
-
-* Receives events
-* Routes them
-* Notifies subscribers
-
-This allows building **modular, scalable, and maintainable systems** without tight coupling between components.
-
----
-
-## ✍️ Author
-
-**Animesh Sharma**
-
----
+Animesh Sharma
